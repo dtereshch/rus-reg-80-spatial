@@ -11,7 +11,7 @@ editor: visual
 Для начала установим и загрузим пакеты, необходимые для пространственного анализа.
 
 ```{r, message=FALSE}
-library(tidyverse)    # манипуляции с данными и визуализация
+library(dplyr)        # манипуляции с данными и визуализация
 library(geodata)      # для доступа к данным о границах
 library(sf)           # манипуляции с пространственными объектами
 ```
@@ -39,7 +39,7 @@ rus_reg_sf <- sf::st_as_sf(rus_reg_gpkg)
 Из-за расположения территории России в двух полушариях карта выглядит не очень корректно:
 
 ```{r}
-plot(st_geometry(rus_reg_sf))
+plot(rus_reg_sf$geometry)
 ```
 
 Исправим проблему с координатной системой:
@@ -51,7 +51,7 @@ rus_reg_sf <- sf::st_transform(rus_reg_sf, crs = "+proj=longlat +lon_wrap=180")
 Теперь получается адекватная карта:
 
 ```{r}
-plot(st_geometry(rus_reg_sf))
+plot(rus_reg_sf$geometry)
 ```
 
 ## 
@@ -69,38 +69,38 @@ auto_units <- c("Nenets", "Khanty-Mansiy", "Yamal-Nenets")
 Создадим пространственные наборы данных для Архангельской и Тюменской областей и входящих в них автономных округов:
 
 ```{r}
-arkh_sf <- rus_reg_sf %>% filter(NAME_1 %in% arkh_units)
-tyum_sf <- rus_reg_sf %>% filter(NAME_1 %in% tyum_units)
+arkh_sf <- rus_reg_sf %>% dplyr::filter(NAME_1 %in% arkh_units)
+tyum_sf <- rus_reg_sf %>% dplyr::filter(NAME_1 %in% tyum_units)
 ```
 
 Объединим объекты внутри каждой из областей:
 
 ```{r}
-arkh_polyg <- arkh_sf %>% st_union()
-tyum_polyg <- tyum_sf %>% st_union()
+arkh_polyg <- arkh_sf %>% sf::st_union()
+tyum_polyg <- tyum_sf %>% sf::st_union()
 ```
 
 Удалим из изначального набора данные об автономных округах и заменим полигоны для Архангельской и Тюменской областей на новые:
 
 ```{r}
 rus_reg_sf_80 <- rus_reg_sf %>% 
-  filter(!NAME_1 %in% auto_units) %>%
-  mutate(geometry = case_when(NAME_1 == "Arkhangel'sk" ~ arkh_polyg,
-                              NAME_1 == "Tyumen'" ~ tyum_polyg,
-                              .default = geometry))
+  dplyr::filter(!NAME_1 %in% auto_units) %>%
+  dplyr::mutate(geometry = case_when(NAME_1 == "Arkhangel'sk" ~ arkh_polyg,
+                                     NAME_1 == "Tyumen'" ~ tyum_polyg,
+                                     .default = geometry))
 ```
 
 Посмотрим, что получилось. Теперь автономные округа включены в состав Архангельской и Тюменской областей, границы между ними стерты и они рассматриваются как один пространственный полигон:
 
 ```{r}
-plot(st_geometry(rus_reg_sf_80))
+plot(rus_reg_sf_80$geometry)
 ```
 
 ## Сохранение данных
 
 Сохраним новые данные в формате shp-файла:
 
-```{r, warning=FALSE, message=FALSE}
+```{r, results='hide', warning=FALSE}
 dir.create("rus_reg_80")
-rus_reg_sf_80 %>% st_write("rus_reg_80/rus_reg_80.shp", append = FALSE)
+rus_reg_sf_80 %>% sf::st_write("rus_reg_80/rus_reg_80.shp", append = FALSE)
 ```

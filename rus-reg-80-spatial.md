@@ -13,7 +13,7 @@
 пространственного анализа.
 
 ``` r
-library(tidyverse)    # манипуляции с данными и визуализация
+library(dplyr)        # манипуляции с данными и визуализация
 library(geodata)      # для доступа к данным о границах
 library(sf)           # манипуляции с пространственными объектами
 ```
@@ -55,7 +55,7 @@ rus_reg_sf <- sf::st_as_sf(rus_reg_gpkg)
 очень корректно:
 
 ``` r
-plot(st_geometry(rus_reg_sf))
+plot(rus_reg_sf$geometry)
 ```
 
 ![](rus-reg-80-spatial_files/figure-commonmark/unnamed-chunk-4-1.png)
@@ -69,7 +69,7 @@ rus_reg_sf <- sf::st_transform(rus_reg_sf, crs = "+proj=longlat +lon_wrap=180")
 Теперь получается адекватная карта:
 
 ``` r
-plot(st_geometry(rus_reg_sf))
+plot(rus_reg_sf$geometry)
 ```
 
 ![](rus-reg-80-spatial_files/figure-commonmark/unnamed-chunk-6-1.png)
@@ -91,15 +91,15 @@ auto_units <- c("Nenets", "Khanty-Mansiy", "Yamal-Nenets")
 областей и входящих в них автономных округов:
 
 ``` r
-arkh_sf <- rus_reg_sf %>% filter(NAME_1 %in% arkh_units)
-tyum_sf <- rus_reg_sf %>% filter(NAME_1 %in% tyum_units)
+arkh_sf <- rus_reg_sf %>% dplyr::filter(NAME_1 %in% arkh_units)
+tyum_sf <- rus_reg_sf %>% dplyr::filter(NAME_1 %in% tyum_units)
 ```
 
 Объединим объекты внутри каждой из областей:
 
 ``` r
-arkh_polyg <- arkh_sf %>% st_union()
-tyum_polyg <- tyum_sf %>% st_union()
+arkh_polyg <- arkh_sf %>% sf::st_union()
+tyum_polyg <- tyum_sf %>% sf::st_union()
 ```
 
 Удалим из изначального набора данные об автономных округах и заменим
@@ -107,10 +107,10 @@ tyum_polyg <- tyum_sf %>% st_union()
 
 ``` r
 rus_reg_sf_80 <- rus_reg_sf %>% 
-  filter(!NAME_1 %in% auto_units) %>%
-  mutate(geometry = case_when(NAME_1 == "Arkhangel'sk" ~ arkh_polyg,
-                              NAME_1 == "Tyumen'" ~ tyum_polyg,
-                              .default = geometry))
+  dplyr::filter(!NAME_1 %in% auto_units) %>%
+  dplyr::mutate(geometry = case_when(NAME_1 == "Arkhangel'sk" ~ arkh_polyg,
+                                     NAME_1 == "Tyumen'" ~ tyum_polyg,
+                                     .default = geometry))
 ```
 
 Посмотрим, что получилось. Теперь автономные округа включены в состав
@@ -118,7 +118,7 @@ rus_reg_sf_80 <- rus_reg_sf %>%
 рассматриваются как один пространственный полигон:
 
 ``` r
-plot(st_geometry(rus_reg_sf_80))
+plot(rus_reg_sf_80$geometry)
 ```
 
 ![](rus-reg-80-spatial_files/figure-commonmark/unnamed-chunk-11-1.png)
@@ -129,10 +129,5 @@ plot(st_geometry(rus_reg_sf_80))
 
 ``` r
 dir.create("rus_reg_80")
-rus_reg_sf_80 %>% st_write("rus_reg_80/rus_reg_80.shp", append = FALSE)
+rus_reg_sf_80 %>% sf::st_write("rus_reg_80/rus_reg_80.shp", append = FALSE)
 ```
-
-    Deleting layer `rus_reg_80' using driver `ESRI Shapefile'
-    Writing layer `rus_reg_80' to data source 
-      `rus_reg_80/rus_reg_80.shp' using driver `ESRI Shapefile'
-    Writing 80 features with 10 fields and geometry type Unknown (any).
