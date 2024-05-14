@@ -31,3 +31,5 @@ plot(rus_reg_sf_80$geometry)
 
 dir.create("rus_reg_80")
 rus_reg_sf_80 %>% sf::st_write("rus_reg_80/rus_reg_80.shp", append = FALSE)
+
+save(rus_reg_sf, rus_reg_sf_80, file = "rus_reg_sf.RData")
